@@ -1,7 +1,7 @@
 /*
 COVID Portfolio Project
 
-Skills used: Joins, CTE's, Windows Functions, Aggregrate Functions, Converting Data Types, Creating Views
+Skills used: Joins, CTE's, Temp Tables, Windows Functions, Aggregrate Functions, Converting Data Types, Creating Views
 */
 
 -- Covid Death Table Information
@@ -132,6 +132,33 @@ WHERE dea.continent LIKE '%america'
 )
 SELECT *, (RollingPeopleVaccinated/Population)*100 AS RollingPeopleVaccinatedPerc
 FROM PopvsVac;
+
+-- Temp Table
+DROP TEMPORARY TABLE IF EXISTS PercentPopVaccinated;
+CREATE TEMPORARY TABLE PercentPopVaccinated
+(
+Continent VARCHAR(255),
+Location VARCHAR(255),
+Date DATETIME,
+Population INT, 
+New_Vaccinations INT,
+RollingPeopleVaccinated INT
+);
+
+INSERT INTO PercentPopVaccinated
+SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations,
+SUM(CONVERT(vac.new_vaccinations, SIGNED)) OVER (PARTITION BY dea.location ORDER BY dea.location, dea.date) 
+as RollingPeopleVaccinated
+-- (RollingPeopleVaccinated/population)*100 AS TotalPeopleVaccinated
+FROM PortfolioProject.coviddeaths AS dea
+JOIN PortfolioProject.covidvaccinations AS vac
+	ON dea.location = vac.location
+    AND dea.date = vac.date
+-- WHERE dea.continent IS NOT NULL;
+WHERE dea.continent LIKE '%america';
+
+SELECT *, (RollingPeopleVaccinated/Population)*100 AS RollingPeopleVaccinatedPerc
+FROM PercentPopVaccinated;
 
 -- Create View 
 Create View PercentPopVaccinated AS 
